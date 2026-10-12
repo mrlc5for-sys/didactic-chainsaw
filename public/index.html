@@ -1,0 +1,849 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<meta name="theme-color" content="#04050a"/>
+<title>Soulzy // Autonomous Quest Engine</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:#04050a;color:#dbeafe;font-family:'JetBrains Mono',ui-monospace,monospace;-webkit-tap-highlight-color:transparent;overflow-x:hidden}
+.font-display{font-family:'Orbitron',ui-sans-serif,sans-serif;letter-spacing:.06em}
+.grad{background:linear-gradient(120deg,#22d3ee 0%,#a78bfa 50%,#e879f9 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.bg{position:fixed;inset:0;z-index:-3;background:radial-gradient(1200px 800px at 15% -10%,rgba(34,211,238,.14),transparent 60%),radial-gradient(1000px 700px at 90% 10%,rgba(232,121,249,.14),transparent 60%),radial-gradient(800px 600px at 50% 100%,rgba(167,139,250,.1),transparent 60%),#04050a}
+.grid{position:fixed;inset:0;z-index:-2;background-image:linear-gradient(rgba(34,211,238,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(34,211,238,.05) 1px,transparent 1px);background-size:48px 48px;mask-image:radial-gradient(ellipse at center,black 40%,transparent 80%);-webkit-mask-image:radial-gradient(ellipse at center,black 40%,transparent 80%)}
+canvas#fx{position:fixed;inset:0;z-index:-2;pointer-events:none;opacity:.9}
+.scan{position:fixed;inset:0;z-index:-1;background:repeating-linear-gradient(0deg,rgba(255,255,255,.02) 0 1px,transparent 1px 4px);pointer-events:none}
+.glass{background:linear-gradient(180deg,rgba(15,23,42,.6),rgba(2,6,23,.72));border:1px solid rgba(34,211,238,.2);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-radius:12px}
+.glass-mg{border-color:rgba(232,121,249,.3);background:linear-gradient(180deg,rgba(30,15,45,.55),rgba(10,4,20,.7))}
+.glow{box-shadow:0 0 30px rgba(34,211,238,.18)}
+.glow-mg{box-shadow:0 0 30px rgba(232,121,249,.2)}
+.pill{border:1px solid currentColor;padding:2px 8px;border-radius:999px;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;display:inline-flex;align-items:center;gap:4px;line-height:1.5}
+.pill-dot{width:5px;height:5px;border-radius:50%;background:currentColor;box-shadow:0 0 6px currentColor}
+.btn{transition:.18s;border:1px solid rgba(34,211,238,.5);background:rgba(34,211,238,.04);color:#67e8f9;padding:10px 16px;border-radius:8px;cursor:pointer;font-family:inherit;font-size:12px;letter-spacing:.1em;text-transform:uppercase;display:inline-block;text-decoration:none;text-align:center}
+.btn:hover{background:rgba(34,211,238,.14);box-shadow:0 0 18px rgba(34,211,238,.35)}
+.btn:active{transform:translateY(1px)}
+.btn-solid{background:linear-gradient(120deg,#22d3ee,#a78bfa);border-color:transparent;color:#04050a;font-weight:700}
+.btn-mg{border-color:rgba(232,121,249,.5);background:rgba(232,121,249,.04);color:#f0abfc}
+.btn-danger{border-color:rgba(248,113,113,.5);color:#fca5a5;background:rgba(248,113,113,.05)}
+input,select{background:rgba(2,6,23,.7);border:1px solid rgba(34,211,238,.25);color:#dbeafe;padding:12px;border-radius:8px;font-family:inherit;font-size:14px;width:100%;min-height:44px}
+input:focus,select:focus{outline:0;border-color:#22d3ee;box-shadow:0 0 12px rgba(34,211,238,.35)}
+input::placeholder{color:#475569}
+.hidden{display:none!important}
+.wrap{max-width:1100px;margin:0 auto;padding:16px}
+.center{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+
+nav.topnav{position:sticky;top:0;z-index:40;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);background:rgba(4,5,10,.6);border-bottom:1px solid rgba(34,211,238,.1)}
+nav.topnav .inner{max-width:1100px;margin:0 auto;padding:0 16px;height:56px;display:flex;align-items:center;justify-content:space-between}
+nav.topnav .logo{font-weight:700;font-size:20px;letter-spacing:.2em}
+nav.topnav .links a{color:#94a3b8;text-decoration:none;font-size:12px;letter-spacing:.1em;padding:6px 10px;border-radius:6px;text-transform:uppercase}
+nav.topnav .links a:hover{color:#67e8f9;background:rgba(34,211,238,.06)}
+@media(max-width:640px){nav.topnav .links{display:none}}
+
+.hero{padding:80px 16px 60px;text-align:center;max-width:800px;margin:0 auto}
+.hero h1{font-size:clamp(38px,9vw,72px);line-height:1.05;font-weight:900}
+.hero p{color:#94a3b8;font-size:14px;max-width:520px;margin:22px auto 0;line-height:1.7}
+.hero .cta{margin-top:32px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+
+.stats{max-width:900px;margin:40px auto 0;display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:0 16px}
+@media(min-width:640px){.stats{grid-template-columns:repeat(4,1fr)}}
+.stat{padding:16px;text-align:center;border-radius:12px;background:linear-gradient(180deg,rgba(15,23,42,.55),rgba(2,6,23,.72));border:1px solid rgba(34,211,238,.18)}
+.stat b{display:block;font-size:26px;font-weight:900;background:linear-gradient(120deg,#22d3ee,#a78bfa,#e879f9);-webkit-background-clip:text;background-clip:text;color:transparent}
+.stat span{font-size:9px;letter-spacing:.15em;color:#22d3ee99;text-transform:uppercase}
+
+section.block{padding:60px 16px;max-width:1100px;margin:0 auto}
+section.block h2{text-align:center;font-size:clamp(24px,5vw,36px);margin-bottom:8px}
+section.block .sub{text-align:center;color:#94a3b8;font-size:13px;margin-bottom:32px}
+section.block .pill-wrap{text-align:center;margin-bottom:16px}
+
+.cards{display:grid;grid-template-columns:1fr;gap:14px}
+@media(min-width:640px){.cards{grid-template-columns:repeat(2,1fr)}}
+@media(min-width:900px){.cards{grid-template-columns:repeat(3,1fr)}}
+.feat{padding:22px;border-radius:12px;background:linear-gradient(180deg,rgba(15,23,42,.55),rgba(2,6,23,.72));border:1px solid rgba(34,211,238,.18)}
+.feat .ic{font-size:22px;margin-bottom:10px}
+.feat h3{font-size:12px;color:#67e8f9;letter-spacing:.1em;margin-bottom:8px;text-transform:uppercase}
+.feat p{font-size:12px;color:#94a3b8;line-height:1.7}
+
+.plans{display:grid;grid-template-columns:1fr;gap:14px;max-width:1000px;margin:0 auto}
+@media(min-width:768px){.plans{grid-template-columns:repeat(3,1fr)}}
+.plan{padding:24px;border-radius:14px;background:linear-gradient(180deg,rgba(15,23,42,.55),rgba(2,6,23,.72));border:1px solid rgba(34,211,238,.2);display:flex;flex-direction:column;position:relative}
+.plan.pro{background:linear-gradient(180deg,rgba(30,15,45,.55),rgba(10,4,20,.7));border-color:rgba(232,121,249,.35);box-shadow:0 0 30px rgba(232,121,249,.15)}
+.plan.elite{border-color:rgba(52,211,153,.35)}
+.plan .tag{position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:#04050a;border:1px solid #e879f9;color:#f0abfc;padding:3px 10px;border-radius:999px;font-size:9px;letter-spacing:.15em;text-transform:uppercase}
+.plan .name{font-size:14px;letter-spacing:.15em;text-transform:uppercase;margin-bottom:10px}
+.plan .price{font-size:32px;font-weight:900;margin-bottom:4px}
+.plan .price small{font-size:12px;color:#64748b;font-weight:400;letter-spacing:0}
+.plan ul{list-style:none;font-size:12px;color:#cbd5e1;line-height:2;margin:16px 0 20px;flex:1}
+.plan ul li::before{content:"› ";color:#67e8f9}
+.plan.pro ul li::before{color:#f0abfc}
+.plan.elite ul li::before{color:#6ee7b7}
+.plan .btn{width:100%;padding:12px}
+
+footer{border-top:1px solid rgba(34,211,238,.1);margin-top:60px;padding:24px 16px;text-align:center;color:#475569;font-size:11px;letter-spacing:.1em}
+
+.login-page{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(4,5,10,.75);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.login-card{width:100%;max-width:400px;padding:28px;border-radius:16px}
+.login-card h1{font-size:32px;text-align:center;margin-bottom:4px}
+.login-card .sub{text-align:center;font-size:10px;letter-spacing:.3em;color:#22d3ee80;text-transform:uppercase;margin-bottom:22px}
+
+.app-main{padding:16px;max-width:1100px;margin:0 auto;padding-bottom:32px}
+.app-top{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:20px;flex-wrap:wrap}
+.app-top .logo{font-weight:700;font-size:20px;letter-spacing:.2em}
+.app-tabs{display:flex;gap:6px;margin-bottom:18px;overflow-x:auto;scrollbar-width:none}
+.app-tabs::-webkit-scrollbar{display:none}
+.app-tab{padding:8px 14px;border-radius:8px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;color:#67e8f9;background:none;border:1px solid transparent;white-space:nowrap;font-family:inherit}
+.app-tab.on{background:rgba(34,211,238,.1);border-color:rgba(34,211,238,.3)}
+
+.card{padding:16px;margin-bottom:14px;border-radius:12px}
+.title{font-size:11px;letter-spacing:.2em;color:#67e8f9;text-transform:uppercase;margin-bottom:14px}
+.acc{padding:14px;border:1px solid rgba(34,211,238,.15);border-radius:10px;margin-bottom:8px}
+.acc-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.acc-name{font-weight:700;font-size:13px}
+.acc-id{font-size:10px;color:#22d3ee80;margin-top:2px}
+.chip{padding:4px 10px;border-radius:6px;font-size:9px;letter-spacing:.1em;text-transform:uppercase;white-space:nowrap}
+.chip.online{color:#34d399;border:1px solid #34d399}
+.chip.idle{color:#94a3b8;border:1px solid #94a3b8}
+.chip.running{color:#e879f9;border:1px solid #e879f9}
+.chip.scanning{color:#67e8f9;border:1px solid #67e8f9}
+.chip.error{color:#f87171;border:1px solid #f87171}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.row .btn{padding:6px 12px;font-size:10px}
+.stats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px}
+@media(min-width:640px){.stats-grid{grid-template-columns:repeat(4,1fr)}}
+.mini-stat{padding:12px;border-radius:10px;background:linear-gradient(180deg,rgba(15,23,42,.55),rgba(2,6,23,.72));border:1px solid rgba(34,211,238,.15)}
+.mini-stat b{display:block;font-size:22px;font-weight:900;background:linear-gradient(120deg,#22d3ee,#e879f9);-webkit-background-clip:text;background-clip:text;color:transparent}
+.mini-stat span{font-size:9px;letter-spacing:.15em;color:#22d3ee99;text-transform:uppercase}
+.log-line{font-size:11px;padding:5px 0;border-bottom:1px solid rgba(34,211,238,.06);word-break:break-all;color:#67e8f9}
+
+/* __retroBlue */
+:root{--cy:#4ea8ff;--mg:#7c5cff;--bg:#0a0e27}
+body{background:#0a0e27}
+.bg{background:radial-gradient(1200px 800px at 15% -10%,rgba(78,168,255,.18),transparent 60%),radial-gradient(1000px 700px at 90% 10%,rgba(124,92,255,.16),transparent 60%),radial-gradient(800px 600px at 50% 100%,rgba(100,150,255,.12),transparent 60%),#0a0e27}
+.grid{background-image:linear-gradient(rgba(78,168,255,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(78,168,255,.06) 1px,transparent 1px)}
+.grad{background:linear-gradient(120deg,#4ea8ff 0%,#7c5cff 50%,#a78bfa 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.btn{border-color:rgba(78,168,255,.5);background:rgba(78,168,255,.06);color:#8fc9ff}
+.btn:hover{background:rgba(78,168,255,.16);box-shadow:0 0 20px rgba(78,168,255,.4)}
+.btn-solid{background:linear-gradient(120deg,#4ea8ff,#7c5cff);color:#0a0e27}
+.btn-mg{border-color:rgba(124,92,255,.5);background:rgba(124,92,255,.06);color:#b8a4ff}
+.btn-mg:hover{background:rgba(124,92,255,.16);box-shadow:0 0 20px rgba(124,92,255,.4)}
+.glass{background:linear-gradient(180deg,rgba(18,25,60,.6),rgba(10,14,39,.75));border-color:rgba(78,168,255,.22)}
+.glass-mg{border-color:rgba(124,92,255,.35);background:linear-gradient(180deg,rgba(30,25,70,.55),rgba(10,14,39,.72))}
+.pill{letter-spacing:.16em}
+.title{color:#8fc9ff}
+.logo{color:#fff;text-shadow:0 0 24px rgba(78,168,255,.6)}
+.hdr-line{border-bottom:1px solid rgba(78,168,255,.12)}
+.stat{border-color:rgba(78,168,255,.2);background:linear-gradient(180deg,rgba(18,25,60,.55),rgba(10,14,39,.72))}
+.stat b{background:linear-gradient(120deg,#4ea8ff,#7c5cff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.stat span{color:#4ea8ff99}
+.feat{border-color:rgba(78,168,255,.2);background:linear-gradient(180deg,rgba(18,25,60,.55),rgba(10,14,39,.72))}
+.feat h3{color:#8fc9ff}
+.plan{border-color:rgba(78,168,255,.22);background:linear-gradient(180deg,rgba(18,25,60,.55),rgba(10,14,39,.72))}
+.plan.pro{background:linear-gradient(180deg,rgba(30,25,70,.55),rgba(10,14,39,.72));border-color:rgba(124,92,255,.4);box-shadow:0 0 30px rgba(124,92,255,.15)}
+.plan .tag{background:#0a0e27;border-color:#7c5cff;color:#b8a4ff}
+.plan .price{color:#fff}
+.mini-stat{border-color:rgba(78,168,255,.2);background:linear-gradient(180deg,rgba(18,25,60,.55),rgba(10,14,39,.72))}
+.mini-stat b{background:linear-gradient(120deg,#4ea8ff,#7c5cff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.mini-stat span{color:#4ea8ff99}
+.app-tab{color:#8fc9ff}
+.app-tab.on{background:rgba(78,168,255,.14);border-color:rgba(78,168,255,.4)}
+.acc{border-color:rgba(78,168,255,.2)}
+.chip.online{color:#4ade80;border-color:#4ade80}
+.chip.running{color:#7c5cff;border-color:#7c5cff}
+.chip.scanning{color:#4ea8ff;border-color:#4ea8ff}
+.chip.error{color:#f87171;border-color:#f87171}
+.chip.idle{color:#64748b;border-color:#64748b}
+input,select{background:rgba(10,14,39,.7);border-color:rgba(78,168,255,.3)}
+input:focus,select:focus{border-color:#4ea8ff;box-shadow:0 0 12px rgba(78,168,255,.4)}
+nav.topnav{background:rgba(10,14,39,.75);border-bottom-color:rgba(78,168,255,.12)}
+nav.topnav .links a{color:#94a3b8}
+nav.topnav .links a:hover{color:#8fc9ff;background:rgba(78,168,255,.08)}
+.log-line{color:#8fc9ff}
+#fx{opacity:.4}
+
+
+/* __jarvis */
+.boot-overlay{position:fixed;inset:0;z-index:9999;background:#0a0e27;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .6s}
+.boot-overlay.hide{opacity:0;pointer-events:none}
+.jarvis-ring{position:relative;width:180px;height:180px;margin-bottom:32px}
+.jarvis-ring svg{position:absolute;inset:0;filter:drop-shadow(0 0 12px rgba(78,168,255,.7))}
+.jarvis-ring .r1{animation:jarvisSpin 8s linear infinite}
+.jarvis-ring .r2{animation:jarvisSpin 5s linear infinite reverse}
+.jarvis-ring .r3{animation:jarvisSpin 12s linear infinite}
+.jarvis-ring .core{position:absolute;top:50%;left:50%;width:36px;height:36px;margin:-18px 0 0 -18px;border-radius:50%;background:radial-gradient(circle,#e0f2ff,#4ea8ff);box-shadow:0 0 40px #4ea8ff,0 0 80px #7c5cff;animation:jarvisPulse 2s ease-in-out infinite}
+@keyframes jarvisSpin{to{transform:rotate(360deg)}}
+@keyframes jarvisPulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.15);opacity:.85}}
+.boot-text{color:#8fc9ff;font-size:11px;letter-spacing:.3em;text-transform:uppercase;margin-top:8px;min-height:16px}
+.boot-sub{color:#475569;font-size:10px;letter-spacing:.2em;margin-top:16px;text-transform:uppercase}
+.boot-bar{width:240px;height:2px;background:rgba(78,168,255,.15);margin-top:24px;overflow:hidden;position:relative}
+.boot-bar::after{content:"";position:absolute;left:0;top:0;bottom:0;width:40%;background:linear-gradient(90deg,transparent,#4ea8ff,transparent);animation:jarvisScan 1.4s ease-in-out infinite}
+@keyframes jarvisScan{0%{left:-40%}100%{left:100%}}
+
+.hero-bg{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.hero-bg svg{position:absolute;top:-100px;right:-100px;width:600px;height:600px;opacity:.35;filter:blur(.5px)}
+@media(max-width:768px){.hero-bg svg{width:380px;height:380px;top:-60px;right:-80px;opacity:.28}}
+.hero-bg .r1{animation:jarvisSpin 40s linear infinite;transform-origin:center}
+.hero-bg .r2{animation:jarvisSpin 30s linear infinite reverse;transform-origin:center}
+.hero-bg .r3{animation:jarvisSpin 55s linear infinite;transform-origin:center}
+.hero{position:relative;z-index:1}
+
+.logs-console{position:fixed;bottom:20px;right:20px;width:320px;z-index:100;background:linear-gradient(180deg,rgba(10,14,39,.95),rgba(6,10,30,.98));border:1px solid rgba(78,168,255,.3);border-radius:10px;box-shadow:0 8px 40px rgba(0,0,0,.5),0 0 30px rgba(78,168,255,.15);font-family:ui-monospace,monospace;font-size:10px;overflow:hidden;backdrop-filter:blur(10px)}
+.logs-console.hide{display:none}
+.logs-head{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:rgba(78,168,255,.08);border-bottom:1px solid rgba(78,168,255,.15);cursor:pointer;user-select:none}
+.logs-head .title{font-size:9px;letter-spacing:.2em;color:#8fc9ff;text-transform:uppercase}
+.logs-head .dot{width:6px;height:6px;border-radius:50%;background:#4ade80;box-shadow:0 0 8px #4ade80;animation:jarvisPulse 2s infinite;display:inline-block;margin-right:6px}
+.logs-head .x{color:#64748b;font-size:12px;line-height:1}
+.logs-body{padding:8px 12px 12px;max-height:180px;overflow:hidden;color:#64748b;line-height:1.7}
+.logs-body .ln{opacity:0;animation:jarvisFadeIn .5s forwards}
+.logs-body .ln .t{color:#334155}
+.logs-body .ln .ok{color:#4ade80}
+.logs-body .ln .in{color:#8fc9ff}
+.logs-body .ln .wr{color:#fbbf24}
+@keyframes jarvisFadeIn{to{opacity:1}}
+@media(max-width:640px){.logs-console{width:calc(100% - 24px);left:12px;right:12px;bottom:12px;font-size:9px}}
+
+</style>
+</head>
+<body>
+<div class="bg"></div>
+<div id="boot" class="boot-overlay">
+  <div class="jarvis-ring">
+    <svg viewBox="0 0 200 200" class="r1"><circle cx="100" cy="100" r="92" fill="none" stroke="#4ea8ff" stroke-width="1" stroke-dasharray="12 8" opacity=".7"/></svg>
+    <svg viewBox="0 0 200 200" class="r2"><circle cx="100" cy="100" r="76" fill="none" stroke="#7c5cff" stroke-width="2" stroke-dasharray="40 16 8 16" opacity=".8"/></svg>
+    <svg viewBox="0 0 200 200" class="r3"><circle cx="100" cy="100" r="60" fill="none" stroke="#4ea8ff" stroke-width="1" stroke-dasharray="4 6" opacity=".6"/><circle cx="100" cy="100" r="52" fill="none" stroke="#a78bfa" stroke-width=".6" opacity=".4"/></svg>
+    <div class="core"></div>
+  </div>
+  <div class="boot-text" id="bootText">INITIALIZING</div>
+  <div class="boot-bar"></div>
+  <div class="boot-sub">SOULZY · AUTONOMOUS QUEST ENGINE</div>
+</div>
+
+<div class="grid"></div>
+<canvas id="fx"></canvas>
+<div class="scan"></div>
+
+<div id="landing">
+  <nav class="topnav">
+    <div class="inner">
+      <div class="logo grad font-display">SOULZY</div>
+      <div class="links">
+        <a href="#features">Features</a>
+        <a href="#how">How</a>
+        <a href="#plans">Plans</a>
+      </div>
+      <div>
+        <button class="btn btn-solid" onclick="openLogin()">LOGIN</button>
+      </div>
+    </div>
+  </nav>
+
+  
+<div class="hero-bg">
+  <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <radialGradient id="hg" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="#4ea8ff" stop-opacity=".8"/>
+        <stop offset="40%" stop-color="#7c5cff" stop-opacity=".4"/>
+        <stop offset="100%" stop-color="#0a0e27" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+    <circle cx="200" cy="200" r="180" fill="url(#hg)" opacity=".5"/>
+    <g class="r1"><circle cx="200" cy="200" r="160" fill="none" stroke="#4ea8ff" stroke-width="1" stroke-dasharray="30 12 6 12" opacity=".7"/></g>
+    <g class="r2"><circle cx="200" cy="200" r="130" fill="none" stroke="#7c5cff" stroke-width="1.5" stroke-dasharray="60 20 10 20" opacity=".6"/></g>
+    <g class="r3"><circle cx="200" cy="200" r="100" fill="none" stroke="#4ea8ff" stroke-width=".8" stroke-dasharray="6 10" opacity=".5"/></g>
+    <circle cx="200" cy="200" r="70" fill="none" stroke="#a78bfa" stroke-width=".8" opacity=".4"/>
+    <circle cx="200" cy="200" r="40" fill="none" stroke="#4ea8ff" stroke-width="1.5" opacity=".6"/>
+    <circle cx="200" cy="200" r="16" fill="#4ea8ff" opacity=".7"/>
+    <circle cx="200" cy="200" r="8" fill="#e0f2ff"/>
+    <line x1="200" y1="20" x2="200" y2="60" stroke="#4ea8ff" stroke-width="1.5" opacity=".5"/>
+    <line x1="200" y1="340" x2="200" y2="380" stroke="#4ea8ff" stroke-width="1.5" opacity=".5"/>
+    <line x1="20" y1="200" x2="60" y2="200" stroke="#4ea8ff" stroke-width="1.5" opacity=".5"/>
+    <line x1="340" y1="200" x2="380" y2="200" stroke="#4ea8ff" stroke-width="1.5" opacity=".5"/>
+  </svg>
+</div>
+<div class="hero">
+    <div class="pill" style="color:#67e8f9;margin-bottom:20px">
+      <span class="pill-dot"></span> AUTONOMOUS QUEST ENGINE
+    </div>
+    <h1 class="font-display">
+      <span class="grad">QUESTS</span><br/>ON AUTOPILOT
+    </h1>
+    <p>Soulzy orchestrates Discord quests across every account you own — video, stream, activity — completed and claimed while you sleep.</p>
+    <div class="cta">
+      <a class="btn btn-solid" href="https://discord.com/oauth2/authorize?client_id=1558407999524184066&scope=bot+applications.commands&permissions=274877991936" target="_blank" rel="noopener">ADD TO DISCORD</a>
+      <button class="btn" onclick="openLogin()">CONSOLE</button>
+      <a class="btn" href="#features">FEATURES</a>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><b>12.4K</b><span>QUESTS DONE</span></div>
+    <div class="stat"><b>890+</b><span>ACCOUNTS</span></div>
+    <div class="stat"><b>99.9%</b><span>UPTIME</span></div>
+    <div class="stat"><b>5</b><span>QUEST TYPES</span></div>
+  </div>
+
+  <section class="block" id="features">
+    <div class="pill-wrap"><span class="pill" style="color:#f0abfc">CAPABILITIES</span></div>
+    <h2 class="font-display grad">ENGINEERED FOR SCALE</h2>
+    <div class="sub">Every feature needed to run quests reliably across a fleet of identities.</div>
+    <div class="cards">
+      <div class="feat"><div class="ic">◉</div><h3>MULTI-ACCOUNT</h3><p>Manage dozens of identities in parallel with per-account queues and isolated sessions.</p></div>
+      <div class="feat"><div class="ic">▶</div><h3>ALL QUEST TYPES</h3><p>Video, stream, play, activity, achievements — handled natively with correct heartbeat cadence.</p></div>
+      <div class="feat"><div class="ic">≡</div><h3>LIVE TELEMETRY</h3><p>Real-time progress bars, structured logs, per-quest status streamed to the dashboard.</p></div>
+      <div class="feat"><div class="ic">◈</div><h3>PROXY ROTATION</h3><p>Bind a proxy per identity or rotate automatically. Residential and datacenter supported.</p></div>
+      <div class="feat"><div class="ic">⬢</div><h3>ENCRYPTED VAULT</h3><p>Tokens encrypted at rest with AES-256-GCM. Master key from env, never logged.</p></div>
+      <div class="feat"><div class="ic">✦</div><h3>24/7 AUTONOMY</h3><p>Auto-retry with backoff, auto-claim on completion, self-healing on transient errors.</p></div>
+    </div>
+  </section>
+
+  <section class="block" id="how">
+    <div class="pill-wrap"><span class="pill" style="color:#67e8f9">PIPELINE</span></div>
+    <h2 class="font-display grad">THREE STEPS TO AUTOPILOT</h2>
+    <div class="sub">From zero to running in under two minutes.</div>
+    <div class="cards">
+      <div class="feat"><h3 style="color:#67e8f9">01 · REGISTER</h3><p>Drop in tokens from the dashboard or via <code style="color:#f0abfc">/link</code>. Soulzy validates each account and stores it encrypted.</p></div>
+      <div class="feat"><h3 style="color:#f0abfc">02 · PICK QUESTS</h3><p>Auto-detects available quests, or run them manually per account. Set delays, retries, concurrency.</p></div>
+      <div class="feat"><h3 style="color:#6ee7b7">03 · LET IT RUN</h3><p>Engine completes, claims rewards, and streams progress to your dashboard. Watch live.</p></div>
+    </div>
+  </section>
+
+  <section class="block" id="plans">
+    <div class="pill-wrap"><span class="pill" style="color:#f0abfc">ORB EXCHANGE</span></div>
+    <h2 class="font-display grad">CHOOSE YOUR TIER</h2>
+    <div class="sub">Purchases handled in Discord.</div>
+    <div class="plans">
+      <div class="plan">
+        <div class="name" style="color:#67e8f9">STARTER</div>
+        <div class="price">₹0<small>/forever</small></div>
+        <ul>
+          <li>1 account</li>
+          <li>all quest types</li>
+          <li>auto-enroll</li>
+          <li>basic logs</li>
+        </ul>
+        <a class="btn" href="https://discord.gg/soulzy" target="_blank" rel="noopener">GET FREE</a>
+      </div>
+      <div class="plan pro">
+        <div class="tag">POPULAR</div>
+        <div class="name" style="color:#f0abfc">PRO</div>
+        <div class="price">₹499<small> / $5 · mo</small></div>
+        <ul>
+          <li>10+ accounts</li>
+          <li>hosting included</li>
+          <li>auto-enroll</li>
+          <li>custom RPC</li>
+          <li>priority queue</li>
+        </ul>
+        <a class="btn btn-mg" href="https://discord.gg/soulzy" target="_blank" rel="noopener">BUY IN DISCORD</a>
+      </div>
+      <div class="plan elite">
+        <div class="name" style="color:#6ee7b7">ELITE</div>
+        <div class="price">₹999<small> / $10 · mo</small></div>
+        <ul>
+          <li>50+ accounts</li>
+          <li>everything in Pro</li>
+          <li>auto server joiner</li>
+          <li>non-cap control</li>
+          <li>private nodes</li>
+        </ul>
+        <a class="btn" style="border-color:#34d399;color:#6ee7b7" href="https://discord.gg/soulzy" target="_blank" rel="noopener">BUY IN DISCORD</a>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+  <div style="display:flex;flex-direction:column;align-items:center;gap:14px">
+    <div style="display:flex;gap:20px;flex-wrap:wrap;justify-content:center">
+      <a href="https://discord.gg/soulzy" target="_blank" rel="noopener" style="color:#67e8f9;text-decoration:none;font-size:12px;letter-spacing:.1em">DISCORD</a>
+      <a href="/api/plans" style="color:#67e8f9;text-decoration:none;font-size:12px;letter-spacing:.1em">PLANS</a>
+      <a href="https://discord.com/oauth2/authorize?client_id=1558407999524184066&scope=bot+applications.commands&permissions=274877991936" target="_blank" rel="noopener" style="color:#67e8f9;text-decoration:none;font-size:12px;letter-spacing:.1em">INVITE BOT</a>
+    </div>
+    <div style="font-size:11px;color:#475569;letter-spacing:.1em">© 2026 SOULZY · AUTONOMOUS QUEST ENGINE</div>
+  </div>
+</footer>
+</div>
+
+<div id="loginPage" class="login-page hidden">
+  <div class="glass glow login-card">
+    <div style="text-align:left;margin-bottom:14px"><button class="btn" style="padding:4px 10px;font-size:10px" onclick="closeLogin()">← BACK</button></div>
+    <h1 class="font-display grad">SOULZY</h1>
+    <div class="sub">CONTROL DECK</div>
+    <div style="display:flex;gap:0;margin-bottom:20px;border-bottom:1px solid rgba(78,168,255,.15)">
+      <button id="tabLogin" class="btn" style="flex:1;border:0;background:none;border-bottom:2px solid #4ea8ff;color:#8fc9ff;border-radius:0;padding:10px;font-size:11px;letter-spacing:.15em" onclick="switchAuth('login')">LOGIN</button>
+      <button id="tabSignup" class="btn" style="flex:1;border:0;background:none;border-bottom:2px solid transparent;color:#64748b;border-radius:0;padding:10px;font-size:11px;letter-spacing:.15em" onclick="switchAuth('signup')">SIGN UP</button>
+    </div>
+    <div id="loginPane">
+      <input id="u" placeholder="username" style="margin-bottom:8px" autocomplete="username"/>
+      <input id="p" type="password" placeholder="password" style="margin-bottom:14px" autocomplete="current-password"/>
+      <button class="btn btn-solid" style="width:100%;padding:14px;text-align:center" onclick="doLogin()">LOGIN</button>
+    </div>
+    <div id="signupPane" class="hidden">
+      <input id="su" placeholder="username (3-32 chars)" style="margin-bottom:8px" autocomplete="username"/>
+      <input id="sp" type="password" placeholder="password (min 6 chars)" style="margin-bottom:8px" autocomplete="new-password"/>
+      <input id="sp2" type="password" placeholder="confirm password" style="margin-bottom:14px" autocomplete="new-password"/>
+      <button class="btn btn-solid" style="width:100%;padding:14px;text-align:center" onclick="doSignup()">CREATE ACCOUNT</button>
+    </div>
+    <div id="authError" style="margin-top:12px;font-size:11px;color:#f87171;text-align:center;display:none"></div>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+let me = null, current = 'overview', accounts = [], plans = {}, orders = [];
+
+async function api(path, method, body) {
+  const r = await fetch('/api' + path, {
+    method: method || 'GET',
+    headers: { 'content-type': 'application/json' },
+    body: body ? JSON.stringify(body) : undefined,
+    credentials: 'same-origin'
+  });
+  if (r.status === 401 && path !== '/login') { closeAll(); throw new Error('unauth'); }
+  return r.json();
+}
+
+function openLogin() { $('loginPage').classList.remove('hidden'); $('landing').classList.add('hidden'); }
+function closeLogin() { $('loginPage').classList.add('hidden'); $('landing').classList.remove('hidden'); }
+
+function switchAuth(mode) {
+  document.getElementById('loginPane').classList.toggle('hidden', mode !== 'login');
+  document.getElementById('signupPane').classList.toggle('hidden', mode !== 'signup');
+  document.getElementById('tabLogin').style.borderBottomColor = mode === 'login' ? '#4ea8ff' : 'transparent';
+  document.getElementById('tabLogin').style.color = mode === 'login' ? '#8fc9ff' : '#64748b';
+  document.getElementById('tabSignup').style.borderBottomColor = mode === 'signup' ? '#4ea8ff' : 'transparent';
+  document.getElementById('tabSignup').style.color = mode === 'signup' ? '#8fc9ff' : '#64748b';
+  document.getElementById('authError').style.display = 'none';
+}
+
+function showAuthError(msg) {
+  const el = document.getElementById('authError');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+async function doLogin() {
+  const r = await api('/login', 'POST', { username: $('u').value.trim(), password: $('p').value });
+  if (!r.ok) return showAuthError('Invalid username or password');
+  me = r.user;
+  await enterApp();
+}
+
+async function doSignup() {
+  const u = $('su').value.trim();
+  const p = $('sp').value;
+  const p2 = $('sp2').value;
+  if (p !== p2) return showAuthError('Passwords do not match');
+  if (p.length < 6) return showAuthError('Password must be at least 6 characters');
+  if (u.length < 3) return showAuthError('Username must be at least 3 characters');
+  const r = await api('/signup', 'POST', { username: u, password: p });
+  if (!r.ok) {
+    const msgs = {
+      username_taken: 'Username already taken',
+      username_length: 'Username must be 3-32 characters',
+      username_chars: 'Username can only contain letters, numbers, _ . -',
+      password_length: 'Password must be at least 6 characters',
+      missing_fields: 'Fill in all fields'
+    };
+    return showAuthError(msgs[r.error] ?? 'Signup failed');
+  }
+  me = r.user;
+  await enterApp();
+}
+
+function closeAll() { $('app').classList.add('hidden'); $('loginPage').classList.add('hidden'); $('landing').classList.remove('hidden'); }
+
+async function enterApp() {
+  $('landing').classList.add('hidden');
+  $('loginPage').classList.add('hidden');
+  $('app').classList.remove('hidden');
+  await loadAll();
+  render();
+}
+
+async function logout() {
+  try { await api('/logout', 'POST'); } catch {}
+  me = null;
+  $('app').classList.add('hidden');
+  $('landing').classList.remove('hidden');
+}
+
+async function loadAll() {
+  const m = await api('/me');
+  if (m.user) me = m.user;
+  accounts = (await api('/accounts')).data ?? [];
+  plans = (await api('/plans')).data ?? {};
+  orders = (await api('/orders')).data ?? [];
+}
+
+const TABS = ['overview', 'accounts', 'plans', 'orders', 'apikeys', 'logs'];
+function render() {
+  const isOwner = me.role === 'owner' || me.role === 'admin';
+  const tabs = isOwner ? [...TABS, 'admin'] : TABS;
+  if (!tabs.includes(current)) current = 'overview';
+  $('appTabs').innerHTML = tabs.map(t =>
+    '<div class="app-tab ' + (t === current ? 'on' : '') + '" onclick="go(\'' + t + '\')">' + t + '</div>'
+  ).join('');
+  const v = $('view');
+  if (current === 'overview') v.innerHTML = viewOverview();
+  if (current === 'accounts') v.innerHTML = viewAccounts();
+  if (current === 'plans') v.innerHTML = viewPlans();
+  if (current === 'orders') { v.innerHTML = viewOrders(); }
+  if (current === 'apikeys') { v.innerHTML = viewApiKeys(); loadApiKeys(); }
+  if (current === 'logs') { v.innerHTML = viewLogs(); loadLogs(); }
+  if (current === 'admin') { v.innerHTML = viewAdmin(); loadAdmin(); }
+}
+function go(t) { current = t; loadAll().then(render).catch(render); }
+
+function viewOverview() {
+  const running = accounts.filter(a => a.status === 'running' || a.status === 'scanning').length;
+  const idle = accounts.filter(a => a.status === 'idle').length;
+  const err = accounts.filter(a => a.status === 'error').length;
+  const planInfo = plans[me.plan] ?? { name: 'Free', accounts: 1 };
+  return `
+    <div class="glass card">
+      <div class="title">YOUR PLAN</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+        <div>
+          <div style="font-size:22px;font-weight:900" class="grad">${planInfo.name}</div>
+          <div style="font-size:11px;color:#22d3ee80;margin-top:4px">${accounts.length}/${planInfo.accounts} accounts used</div>
+        </div>
+        <button class="btn btn-mg" onclick="go('plans')">UPGRADE</button>
+      </div>
+    </div>
+    <div class="stats-grid">
+      <div class="mini-stat"><b>${accounts.length}</b><span>ACCOUNTS</span></div>
+      <div class="mini-stat"><b>${running}</b><span>RUNNING</span></div>
+      <div class="mini-stat"><b>${idle}</b><span>IDLE</span></div>
+      <div class="mini-stat"><b>${err}</b><span>ERRORS</span></div>
+    </div>
+    <div class="glass card">
+      <div class="title">ACCOUNTS</div>
+      ${accounts.length ? accounts.map(accRow).join('') : '<div style="color:#22d3ee80;font-size:12px">no accounts linked</div>'}
+    </div>`;
+}
+
+function accRow(a) {
+  const status = a.status || 'idle';
+  return `
+    <div class="acc">
+      <div class="acc-head">
+        <div style="min-width:0">
+          <div class="acc-name">${a.username ?? a.label ?? a.id.slice(0,8)}</div>
+          <div class="acc-id">${a.id.slice(0,8)}${a.proxy ? ' · proxy' : ''}</div>
+        </div>
+        <span class="chip ${status}">${status}</span>
+      </div>
+      <div class="row">
+        <button class="btn" onclick="runAcc('${a.id}')">RUN</button>
+        <button class="btn btn-mg" onclick="claimAcc('${a.id}')">CLAIM</button>
+        <button class="btn btn-danger" onclick="delAcc('${a.id}')">DEL</button>
+      </div>
+    </div>`;
+}
+
+async function runAcc(id) {
+  await api('/accounts/' + id + '/run', 'POST', {});
+  await loadAll(); render();
+}
+async function claimAcc(id) {
+  const r = await api('/accounts/' + id + '/claim', 'POST');
+  alert('claimed: ' + (r.claimed ?? 0));
+  await loadAll(); render();
+}
+async function delAcc(id) {
+  if (!confirm('remove account?')) return;
+  await api('/accounts/' + id, 'DELETE');
+  await loadAll(); render();
+}
+
+function viewAccounts() {
+  return `
+    <div class="glass card">
+      <div class="title">ADD ACCOUNT</div>
+      <input id="tk2" placeholder="discord user token" style="margin-bottom:8px"/>
+      <input id="lb" placeholder="label (optional)" style="margin-bottom:8px"/>
+      <input id="px" placeholder="proxy url (optional)" style="margin-bottom:12px"/>
+      <button class="btn btn-solid" style="width:100%;padding:12px;text-align:center" onclick="addAcc()">REGISTER</button>
+    </div>
+    <div class="glass card">
+      <div class="title">IDENTITY VAULT</div>
+      ${accounts.length ? accounts.map(accRow).join('') : '<div style="color:#22d3ee80;font-size:12px">no accounts</div>'}
+    </div>`;
+}
+
+async function addAcc() {
+  const token = $('tk2').value.trim();
+  if (!token) return;
+  const r = await api('/accounts', 'POST', { token, label: $('lb').value.trim(), proxy: $('px').value.trim() });
+  if (!r.ok) return alert(r.reason ?? r.error ?? 'error');
+  $('tk2').value = ''; $('lb').value = ''; $('px').value = '';
+  await loadAll(); render();
+}
+
+function viewPlans() {
+  const p = plans.pro ?? { price: 499, accounts: 10 };
+  const e = plans.elite ?? { price: 999, accounts: 50 };
+  const isPro = me.plan === 'pro';
+  const isElite = me.plan === 'elite';
+  return `
+    <div class="plans">
+      <div class="plan">
+        <div class="name" style="color:#67e8f9">STARTER</div>
+        <div class="price">₹0</div>
+        <ul><li>1 account</li><li>all quest types</li><li>5 quests / 4h cooldown</li></ul>
+        <button class="btn" ${me.plan === 'free' ? 'disabled' : ''} onclick="buyPlan('free')">${me.plan === 'free' ? 'CURRENT' : 'DOWNGRADE'}</button>
+      </div>
+      <div class="plan pro">
+        <div class="tag">POPULAR</div>
+        <div class="name" style="color:#f0abfc">PRO</div>
+        <div class="price">₹${p.price}<small> / $5</small></div>
+        <ul><li>${p.accounts}+ accounts</li><li>hosting included</li><li>auto-enroll</li><li>custom RPC</li></ul>
+        <button class="btn btn-mg" ${isPro ? 'disabled' : ''} onclick="buyPlan('pro')">${isPro ? 'CURRENT' : 'ACQUIRE'}</button>
+      </div>
+      <div class="plan elite">
+        <div class="name" style="color:#6ee7b7">ELITE</div>
+        <div class="price">₹${e.price}<small> / $10</small></div>
+        <ul><li>${e.accounts}+ accounts</li><li>everything in Pro</li><li>auto server joiner</li><li>non-cap control</li></ul>
+        <button class="btn" style="border-color:#34d399;color:#6ee7b7" ${isElite ? 'disabled' : ''} onclick="buyPlan('elite')">${isElite ? 'CURRENT' : 'ACQUIRE'}</button>
+      </div>
+    </div>`;
+}
+
+async function buyPlan(plan) {
+  if (plan === 'free') {
+    if (!confirm('Downgrade to free? You will lose access to extra accounts.')) return;
+    return;
+  }
+  const method = confirm('Press OK for UPI / CARD. Cancel for CRYPTO.') ? 'upi' : 'crypto';
+  const r = await api('/buy', 'POST', { plan, provider: method });
+  if (!r.ok) return alert(r.error ?? 'error');
+  if (r.url) window.location.href = r.url;
+  else alert('no checkout url');
+}
+
+function viewOrders() {
+  if (orders.length === 0) return '<div class="glass card"><div class="title">ORDERS</div><div style="color:#22d3ee80;font-size:12px">no orders yet</div></div>';
+  return '<div class="glass card"><div class="title">ORDER HISTORY</div>' + orders.map(o => `
+    <div class="acc">
+      <div class="acc-head">
+        <div>
+          <div class="acc-name">${o.plan.toUpperCase()}</div>
+          <div class="acc-id">${o.provider} · ${(o.amount/100).toFixed(2)} ${o.currency.toUpperCase()}</div>
+        </div>
+        <span class="chip ${o.status === 'paid' ? 'online' : o.status === 'pending' ? 'idle' : 'error'}">${o.status}</span>
+      </div>
+      <div style="font-size:10px;color:#22d3ee80;margin-top:6px">${new Date(o.created_at * 1000).toLocaleString()}</div>
+    </div>
+  `).join('') + '</div>';
+}
+
+function viewApiKeys() {
+  return `<div class="glass card">
+    <div class="title">API KEYS</div>
+    <div style="color:#94a3b8;font-size:12px;margin-bottom:14px;line-height:1.7">
+      Use API keys to control Soulzy from your own scripts or apps.<br>
+      Endpoint base: <code style="color:#67e8f9">/api/v1</code>
+    </div>
+    <button class="btn btn-solid" style="width:100%;padding:12px;text-align:center" onclick="createKey()">GENERATE NEW KEY</button>
+    <div id="keyList" style="margin-top:16px"></div>
+  </div>`;
+}
+
+async function loadApiKeys() {
+  const r = await api('/keys');
+  const box = $('keyList');
+  if (!box) return;
+  const keys = r.data ?? [];
+  box.innerHTML = keys.length ? keys.map(k => `
+    <div class="acc">
+      <div class="acc-head">
+        <div style="min-width:0">
+          <div class="acc-name" style="font-family:monospace">${k.preview}</div>
+          <div class="acc-id">created ${new Date(k.created_at * 1000).toLocaleDateString()}</div>
+        </div>
+        <button class="btn btn-danger" onclick="delKey('${k.id}')">REVOKE</button>
+      </div>
+    </div>
+  `).join('') : '<div style="color:#22d3ee80;font-size:12px">no keys yet</div>';
+}
+
+async function createKey() {
+  const r = await api('/keys', 'POST');
+  if (!r.ok) return alert(r.error ?? 'error');
+  alert('Save this key now — it will not be shown again:\n\n' + r.key);
+  await loadApiKeys();
+}
+
+async function delKey(id) {
+  if (!confirm('revoke this key?')) return;
+  await api('/keys/' + id, 'DELETE');
+  await loadApiKeys();
+}
+
+function viewLogs() {
+  return '<div class="glass card"><div class="title">EVENT STREAM</div><div id="logbox" style="max-height:60vh;overflow:auto"></div></div>';
+}
+
+async function loadLogs() {
+  const r = await api('/logs');
+  const box = $('logbox');
+  if (!box) return;
+  const rows = r.data ?? [];
+  box.innerHTML = rows.length
+    ? rows.map(l => '<div class="log-line">[' + new Date(l.created_at * 1000).toISOString().slice(11,19) + '] ' + (l.quest_name ?? l.quest_id ?? '?') + ' · ' + l.status + '</div>').join('')
+    : '<div style="color:#22d3ee80;font-size:12px">no logs yet</div>';
+}
+
+function viewAdmin() {
+  return '<div class="glass card"><div class="title">USER CONTROL</div><div id="adminbox">loading…</div></div>';
+}
+
+async function loadAdmin() {
+  const r = await api('/admin/users');
+  const box = $('adminbox');
+  if (!box) return;
+  const rows = r.data ?? [];
+  box.innerHTML = rows.map(u => `
+    <div class="acc">
+      <div class="acc-head">
+        <div>
+          <div class="acc-name">${u.username ?? u.id}</div>
+          <div class="acc-id">${u.role} · ${u.plan}</div>
+        </div>
+      </div>
+      <div class="row">
+        <button class="btn" onclick="setPlan('\${u.id}','free')">FREE</button>
+        <button class="btn btn-mg" onclick="setPlan('\${u.id}','pro')">PRO</button>
+        <button class="btn" style="border-color:#34d399;color:#6ee7b7" onclick="setPlan('\${u.id}','elite')">ELITE</button>
+      </div>
+    </div>`).join('') || '<div style="color:#22d3ee80;font-size:12px">no users</div>';
+}
+
+async function setPlan(userId, plan) {
+  await api('/admin/users/' + userId + '/plan', 'POST', { plan });
+  await loadAdmin();
+}
+
+(function () {
+  const c = $('fx'), x = c.getContext('2d');
+  let W, H, t = 0;
+  function size() { W = c.width = innerWidth; H = c.height = innerHeight; }
+  function draw() {
+    t += 1;
+    x.clearRect(0, 0, W, H);
+    const hz = H * 0.60, vpx = W * 0.5;
+    const sky = x.createLinearGradient(0, 0, 0, hz);
+    sky.addColorStop(0, 'rgba(4,5,10,0)');
+    sky.addColorStop(1, 'rgba(70,20,100,0.55)');
+    x.fillStyle = sky; x.fillRect(0, 0, W, hz);
+    const sun = x.createRadialGradient(vpx, hz - 6, 0, vpx, hz - 6, Math.min(W, H) * 0.22);
+    sun.addColorStop(0, 'rgba(232,121,249,0.7)');
+    sun.addColorStop(1, 'rgba(167,139,250,0)');
+    x.fillStyle = sun; x.beginPath(); x.arc(vpx, hz - 6, Math.min(W, H) * 0.22, 0, 6.283); x.fill();
+    x.save(); x.beginPath(); x.rect(0, hz, W, H - hz); x.clip();
+    const depth = 22, speed = (t * 0.010) % 1;
+    for (let i = 0; i < depth; i++) {
+      const p = (i / depth + speed) % 1;
+      const curve = Math.pow(p, 2.6);
+      const y = hz + curve * (H - hz + 140);
+      x.strokeStyle = 'rgba(34,211,238,' + (curve * 0.9) + ')';
+      x.lineWidth = curve * 2.4 + 0.4;
+      x.beginPath(); x.moveTo(0, y); x.lineTo(W, y); x.stroke();
+    }
+    const cols = 26, spread = W * 2.6;
+    for (let i = 0; i <= cols; i++) {
+      const fx = (i / cols - 0.5) * spread;
+      const topX = vpx + fx * 0.02, botX = vpx + fx;
+      const g = x.createLinearGradient(0, hz, 0, H);
+      g.addColorStop(0, 'rgba(232,121,249,0.85)');
+      g.addColorStop(1, 'rgba(34,211,238,0)');
+      x.strokeStyle = g; x.lineWidth = 1.1;
+      x.beginPath(); x.moveTo(topX, hz); x.lineTo(botX, H); x.stroke();
+    }
+    x.restore();
+    x.fillStyle = 'rgba(232,121,249,1)';
+    x.fillRect(0, hz - 2, W, 3);
+    requestAnimationFrame(draw);
+  }
+  size(); draw();
+  addEventListener('resize', size);
+})();
+
+(async function () {
+  try {
+    const r = await api('/me');
+    if (r.user) { me = r.user; await enterApp(); }
+  } catch {}
+})();
+
+/* __jarvis_js */
+(function(){
+  const steps = [
+    { t: 'BOOT', m: 'init kernel', c: 'in' },
+    { t: 'BOOT', m: 'loading modules', c: 'in' },
+    { t: 'NET',  m: 'connecting to discord gateway', c: 'in' },
+    { t: 'AUTH', m: 'session verified', c: 'ok' },
+    { t: 'DB',   m: 'sqlite mounted', c: 'ok' },
+    { t: 'VAULT',m: 'decrypting tokens', c: 'in' },
+    { t: 'ENGINE',m:'scheduler online', c: 'ok' },
+    { t: 'READY',m: 'welcome, operator', c: 'ok' }
+  ];
+  const bootText = document.getElementById('bootText');
+  const boot = document.getElementById('boot');
+  let i = 0;
+  function next(){
+    if (i >= steps.length) {
+      setTimeout(() => {
+        if (boot) boot.classList.add('hide');
+        setTimeout(() => boot?.remove(), 700);
+      }, 400);
+      return;
+    }
+    if (bootText) bootText.textContent = steps[i].t + ' · ' + steps[i].m;
+    i++;
+    setTimeout(next, 280 + Math.random() * 200);
+  }
+  next();
+
+  const lb = document.getElementById('logsBody');
+  if (lb) {
+    const lines = [
+      { t: '12:48:02', m: 'scheduler started', c: 'ok' },
+      { t: '12:48:03', m: 'engine online', c: 'ok' },
+      { t: '12:48:11', m: 'account linked: nova#0001', c: 'in' },
+      { t: '12:48:45', m: 'quest found: Watch Nebula Trailer', c: 'in' },
+      { t: '12:48:46', m: 'progress 12/60s', c: 'in' },
+      { t: '12:49:02', m: 'progress 42/60s', c: 'in' },
+      { t: '12:49:18', m: 'quest completed', c: 'ok' },
+      { t: '12:49:19', m: 'reward claimed: 50 orbs', c: 'ok' },
+      { t: '12:52:14', m: 'scanning for new quests...', c: 'in' },
+      { t: '12:53:02', m: 'rate limit hit, backing off 30s', c: 'wr' },
+      { t: '12:53:33', m: 'resumed', c: 'ok' }
+    ];
+    let idx = 0;
+    function push(){
+      if (idx >= lines.length) { idx = 0; lb.innerHTML = ''; }
+      const l = lines[idx++];
+      const div = document.createElement('div');
+      div.className = 'ln';
+      div.innerHTML = '<span class="t">[' + l.t + ']</span> <span class="' + l.c + '">' + l.m + '</span>';
+      lb.appendChild(div);
+      while (lb.children.length > 9) lb.removeChild(lb.firstChild);
+      setTimeout(push, 1400 + Math.random() * 1600);
+    }
+    setTimeout(push, 800);
+  }
+})();
+
+</script>
+
+<div id="logsConsole" class="logs-console">
+  <div class="logs-head" onclick="document.getElementById('logsBody').style.display = document.getElementById('logsBody').style.display === 'none' ? 'block' : 'none'">
+    <span><span class="dot"></span><span class="title">SYSTEM LOGS</span></span>
+    <span class="x">—</span>
+  </div>
+  <div class="logs-body" id="logsBody"></div>
+</div>
+
+</body>
+</html>
