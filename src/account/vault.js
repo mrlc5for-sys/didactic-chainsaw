@@ -1,9 +1,13 @@
 import crypto from 'crypto';
-import { readFileSync, writeFileSync, existsSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { VAULT_SECRET } from '../config.js';
 
-const FILE = join(process.cwd(), 'data', 'vault.json');
+const DATA_DIR = join(process.cwd(), 'data');
+if (!existsSync(DATA_DIR)) {
+  try { mkdirSync(DATA_DIR, { recursive: true }); } catch {}
+}
+const FILE = join(DATA_DIR, 'vault.json');
 const ALGO = 'aes-256-gcm';
 const KEY = crypto.createHash('sha256').update(VAULT_SECRET).digest();
 
